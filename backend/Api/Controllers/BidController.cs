@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Data;
 using Api.Models;
@@ -6,6 +7,7 @@ using Api.Dtos;
 
 namespace Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class BidController : ControllerBase
@@ -19,9 +21,9 @@ public class BidController : ControllerBase
 
     
     [HttpGet]
-    public IActionResult GetBids()
+    public async Task<IActionResult> GetBids()
     {
-        var bids = _context.Bids
+        var bids = await    _context.Bids
             .Select(b => new BidDto
             {
                 Id = b.Id,
@@ -30,16 +32,15 @@ public class BidController : ControllerBase
                 AuctionId = b.AuctionId,
                 UserId = b.UserId
             })
-            .ToList();
-
+            .ToListAsync();
         return Ok(bids);
     }
 
    
     [HttpGet("{id}")]
-    public IActionResult GetBid(int id)
+    public async Task<IActionResult> GetBid(int id)
     {
-        var bid = _context.Bids
+        var bid = await  _context.Bids
             .Where(b => b.Id == id)
             .Select(b => new BidDto
             {
@@ -49,7 +50,7 @@ public class BidController : ControllerBase
                 AuctionId = b.AuctionId,
                 UserId = b.UserId
             })
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         if (bid == null)
             return NotFound();
@@ -59,8 +60,35 @@ public class BidController : ControllerBase
 
     
     [HttpPost]
-    public IActionResult CreateBid(CreateBidDto dto)
+    public async Task<IActionResult> CreateBid(CreateBidDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var auction = await _context.Auctions.FindAsync(dto.AuctionId);
+        if (auction == null)
+        {
+            return BadRequest("Auction not found.");
+        }
+
+        var user = await _context.Users.FindAsync(dto.UserId);
+        if (user == null)
+        {
+            return BadRequest("User not found.");
+        }
+
+        if (dto.Amount <= auction.Price)
+        {
+            return BadRequest("Bid amount must be higher than the current price.");
+        } 
+
+        if(auction.EndDate<= DateTime.UtcNow)
+        {
+            return BadRequest("Auction has already ended.");
+        }
+
         var bid = new Bid
         {
             Amount = dto.Amount,
@@ -70,7 +98,8 @@ public class BidController : ControllerBase
         };
 
         _context.Bids.Add(bid);
-        _context.SaveChanges();
+        auction.Price = dto.Amount;
+        await _context.SaveChangesAsync();
 
         return Ok(new BidDto
         {
@@ -84,15 +113,15 @@ public class BidController : ControllerBase
 
     
     [HttpDelete("{id}")]
-    public IActionResult DeleteBid(int id)
+    public async Task<IActionResult> DeleteBid(int id)
     {
-        var bid = _context.Bids.Find(id);
+        var bid = await _context.Bids.FindAsync(id);
 
         if (bid == null)
             return NotFound();
 
         _context.Bids.Remove(bid);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }

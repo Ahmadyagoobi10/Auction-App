@@ -1,6 +1,4 @@
-﻿
-
-    namespace Api.Dtos;
+﻿ namespace Api.Dtos;
 
 public class BidDto
     {
