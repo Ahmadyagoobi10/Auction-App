@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Api.Data;
 using Api.Models;
 using Api.Dtos;
@@ -16,25 +17,27 @@ public class UserController : ControllerBase
         _context = context;
     }
 
+   
     [HttpGet]
-    public IActionResult GetUsers()
+    public async Task<IActionResult> GetUsers()
     {
-        var users = _context.Users
+        var users = await _context.Users
             .Select(u => new UserDto
             {
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email
             })
-            .ToList();
+            .ToListAsync();
 
         return Ok(users);
     }
 
+    
     [HttpGet("{id}")]
-    public IActionResult GetUser(int id)
+    public async Task<IActionResult> GetUser(int id)
     {
-        var user = _context.Users
+        var user = await _context.Users
             .Where(u => u.Id == id)
             .Select(u => new UserDto
             {
@@ -42,7 +45,7 @@ public class UserController : ControllerBase
                 Username = u.Username,
                 Email = u.Email
             })
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         if (user == null)
             return NotFound();
@@ -50,9 +53,13 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    
     [HttpPost]
-    public IActionResult CreateUser(CreateUserDto dto)
+    public async Task<IActionResult> CreateUser(CreateUserDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var user = new User
         {
             Username = dto.Username,
@@ -61,7 +68,7 @@ public class UserController : ControllerBase
         };
 
         _context.Users.Add(user);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return Ok(new UserDto
         {
@@ -71,16 +78,17 @@ public class UserController : ControllerBase
         });
     }
 
+    
     [HttpDelete("{id}")]
-    public IActionResult DeleteUser(int id)
+    public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = _context.Users.Find(id);
+        var user = await _context.Users.FindAsync(id);
 
         if (user == null)
             return NotFound();
 
         _context.Users.Remove(user);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }

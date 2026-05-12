@@ -1,4 +1,4 @@
-﻿
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Data;
@@ -7,9 +7,10 @@ using Api.Dtos;
 
 namespace Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class  AuctionController : ControllerBase
+public class AuctionController : ControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -18,10 +19,11 @@ public class  AuctionController : ControllerBase
         _context = context;
     }
 
+    
     [HttpGet]
-    public IActionResult GetAuctions()
+    public async Task<IActionResult> GetAuctions()
     {
-        var auctions = _context.Auctions
+        var auctions = await _context.Auctions
             .Select(a => new AuctionDto
             {
                 Id = a.Id,
@@ -32,15 +34,16 @@ public class  AuctionController : ControllerBase
                 EndDate = a.EndDate,
                 UserId = a.UserId
             })
-            .ToList();
+            .ToListAsync();
 
         return Ok(auctions);
     }
 
+    
     [HttpGet("{id}")]
-    public IActionResult GetAuction(int id)
+    public async Task<IActionResult> GetAuction(int id)
     {
-        var auction = _context.Auctions
+        var auction = await _context.Auctions
             .Where(a => a.Id == id)
             .Select(a => new AuctionDto
             {
@@ -52,7 +55,7 @@ public class  AuctionController : ControllerBase
                 EndDate = a.EndDate,
                 UserId = a.UserId
             })
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         if (auction == null)
             return NotFound();
@@ -60,9 +63,22 @@ public class  AuctionController : ControllerBase
         return Ok(auction);
     }
 
+   
     [HttpPost]
-    public IActionResult CreateAuction(CreateAuctionDto dto)
+    public async Task<IActionResult> CreateAuction(CreateAuctionDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        
+        var user = await _context.Users.FindAsync(dto.UserId);
+        if (user == null)
+            return BadRequest("User not found.");
+
+        
+        if (dto.EndDate <= dto.StartDate)
+            return BadRequest("EndDate must be after StartDate.");
+
         var auction = new Auction
         {
             Title = dto.Title,
@@ -74,7 +90,7 @@ public class  AuctionController : ControllerBase
         };
 
         _context.Auctions.Add(auction);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return Ok(new AuctionDto
         {
@@ -88,19 +104,18 @@ public class  AuctionController : ControllerBase
         });
     }
 
+    
     [HttpDelete("{id}")]
-     public IActionResult DeleteAuction(int id)
+    public async Task<IActionResult> DeleteAuction(int id)
     {
-        var auction = _context.Auctions.Find(id);
+        var auction = await _context.Auctions.FindAsync(id);
+
         if (auction == null)
-        {
             return NotFound();
-        }
+
         _context.Auctions.Remove(auction);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
+
         return NoContent();
     }
-
 }
-
-
