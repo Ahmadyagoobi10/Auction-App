@@ -58,47 +58,36 @@ public class BidController : ControllerBase
         return Ok(bid);
     }
 
-    
     [HttpPost]
     public async Task<IActionResult> CreateBid(CreateBidDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
 
         var auction = await _context.Auctions.FindAsync(dto.AuctionId);
         if (auction == null)
-        {
             return BadRequest("Auction not found.");
-        }
 
-        var user = await _context.Users.FindAsync(dto.UserId);
+        var user = await _context.Users.FindAsync(userId);
         if (user == null)
-        {
             return BadRequest("User not found.");
-        }
 
         if (dto.Amount <= auction.Price)
-        {
-            return BadRequest("Bid amount must be higher than the current price.");
-        } 
+            return BadRequest("Bid must be higher than current price.");
 
-        if(auction.EndDate<= DateTime.UtcNow)
-        {
-            return BadRequest("Auction has already ended.");
-        }
+        if (auction.EndDate <= DateTime.UtcNow)
+            return BadRequest("Auction has ended.");
 
         var bid = new Bid
         {
             Amount = dto.Amount,
             CreatedAt = DateTime.UtcNow,
             AuctionId = dto.AuctionId,
-            UserId = dto.UserId
+            UserId = userId
         };
 
         _context.Bids.Add(bid);
         auction.Price = dto.Amount;
+
         await _context.SaveChangesAsync();
 
         return Ok(new BidDto
@@ -111,7 +100,7 @@ public class BidController : ControllerBase
         });
     }
 
-    
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBid(int id)
     {
