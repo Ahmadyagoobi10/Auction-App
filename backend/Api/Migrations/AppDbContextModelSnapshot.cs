@@ -17,7 +17,7 @@ namespace Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -37,7 +37,12 @@ namespace Api.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("StartDate")
@@ -52,6 +57,8 @@ namespace Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Auctions");
                 });
 
@@ -64,6 +71,7 @@ namespace Api.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("AuctionId")
@@ -75,7 +83,16 @@ namespace Api.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("UserId1")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AuctionId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("Bids");
                 });
@@ -103,6 +120,52 @@ namespace Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Api.Models.Auction", b =>
+                {
+                    b.HasOne("Api.Models.User", "User")
+                        .WithMany("Auctions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.Models.Bid", b =>
+                {
+                    b.HasOne("Api.Models.Auction", "Auction")
+                        .WithMany("Bids")
+                        .HasForeignKey("AuctionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Models.User", null)
+                        .WithMany("Bids")
+                        .HasForeignKey("UserId1");
+
+                    b.Navigation("Auction");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.Models.Auction", b =>
+                {
+                    b.Navigation("Bids");
+                });
+
+            modelBuilder.Entity("Api.Models.User", b =>
+                {
+                    b.Navigation("Auctions");
+
+                    b.Navigation("Bids");
                 });
 #pragma warning restore 612, 618
         }

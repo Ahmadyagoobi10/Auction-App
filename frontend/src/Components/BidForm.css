@@ -1,0 +1,31 @@
+.bid-form {
+  background: #111;
+  padding: 12px;
+  border-radius: 12px;
+  color: white;
+}
+
+.bid-form input {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+}
+
+.bid-form button {
+  width: 100%;
+  padding: 8px;
+  background: #00e676;
+  border: none;
+  cursor: pointer;
+}
+
+.price-info {
+  color: #00e676;
+  font-weight: bold;
+}
+
+.msg {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #ccc;
+}
