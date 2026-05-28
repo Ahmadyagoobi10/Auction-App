@@ -1,75 +1,118 @@
-import { useState } from "react";
-import { getToken } from "../Utils/Auth";
+import { useRef, useState } from "react";
+import { placeBid } from "../api/api";
+import "./BidForm.css";
 
-type Props = {
-  auctionId: number;
-  currentPrice: number;
-  onBidSuccess?: (newPrice: number) => void;
-};
+export default function BidForm({
+  id,
+  title,
+  description,
+  price,
+  images
+}: any) {
 
-export default function BidForm({ auctionId, currentPrice, onBidSuccess }: Props) {
-  const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [index, setIndex] = useState(0);
+  const [bid, setBid] = useState("");
+  const [currentPrice, setCurrentPrice] = useState(price);
 
-  const handleBid = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    setLoading(true);
-    setMessage("");
+  const errorTimeout = useRef<any>(null);
+  const successTimeout = useRef<any>(null);
 
-    const token = getToken();
+  const list = Array.isArray(images) && images.length > 0
+    ? images
+    : ["https://via.placeholder.com/600"];
 
-    const res = await fetch("http://localhost:5039/api/Bid", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        amount: Number(amount),
-        auctionId: auctionId
-      })
-    });
+  const sendBid = async () => {
+    const amount = Number(bid);
 
-    const data = await res.json().catch(() => null);
+    if (!amount || amount <= currentPrice) {
+      setError("Ditt bud måste vara högre än nuvarande pris");
+      setSuccess("");
 
-    setLoading(false);
+      if (errorTimeout.current) {
+        clearTimeout(errorTimeout.current);
+      }
 
-    if (!res.ok) {
-      setMessage(data?.message || "Error placing bid");
+      errorTimeout.current = setTimeout(() => {
+        setError("");
+      }, 5000);
+
       return;
     }
 
-    setMessage("Bid placed successfully 🚗🔥");
+    setError("");
 
-    
-    if (onBidSuccess) {
-      onBidSuccess(data.bid.amount);
+    await placeBid(id, amount);
+
+    setCurrentPrice(amount);
+    setBid("");
+    setSuccess("Ditt bud har skickats!");
+
+    if (successTimeout.current) {
+      clearTimeout(successTimeout.current);
     }
 
-    setAmount("");
+    successTimeout.current = setTimeout(() => {
+      setSuccess("");
+    }, 5000);
   };
 
   return (
-    <form className="bid-form" onSubmit={handleBid}>
-      <h3>Place Bid</h3>
+    <div className="card">
 
-      <p className="price-info">
-        Current: {currentPrice.toLocaleString()} kr
-      </p>
+      <div className="image">
 
-      <input
-        placeholder="Your bid amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
+        <button
+          className="arrow left"
+          onClick={() =>
+            setIndex((i) => (i === 0 ? list.length - 1 : i - 1))
+          }
+        >
+          ‹
+        </button>
 
-      <button disabled={loading} type="submit">
-        {loading ? "Placing bid..." : "Bid"}
-      </button>
+        <img src={list[index]} alt={title} />
 
-      {message && <p className="msg">{message}</p>}
-    </form>
+        <button
+          className="arrow right"
+          onClick={() =>
+            setIndex((i) => (i + 1) % list.length)
+          }
+        >
+          ›
+        </button>
+
+      </div>
+
+      <div className="content-bid">
+
+        <h2>{title}</h2>
+
+        <p className="desc">{description}</p>
+
+        <div className="price">
+          Nuvarande bud: {currentPrice.toLocaleString()} kr
+        </div>
+
+        <div className="bidRow">
+          <input
+            placeholder="Skriv ditt bud..."
+            value={bid}
+            onChange={(e) => setBid(e.target.value)}
+          />
+
+          <button onClick={sendBid}>
+            Lägg bud
+          </button>
+        </div>
+
+        {error && <p className="error-message">{error}</p>}
+        {success && <p className="success-message">{success}</p>}
+
+      </div>
+
+    </div>
   );
 }

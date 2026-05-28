@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAuctions } from "../api/api";
-import AuctionCard from "../Components/AuctionCard";
+import Bidform from "../Components/BidForm";
 import "./Auctions.css";
 
 export default function Auctions() {
@@ -28,11 +28,11 @@ export default function Auctions() {
       
       <div className="container">
 
-        <h1 className="title">Aybilar Marketplace</h1>
+        <h1 className="title">Exklusiva bilar</h1>
 
         <div className="grid">
           {auctions.map((a) => (
-            <AuctionCard
+            <Bidform
               key={a.id}
               id={a.id}
               title={a.title}
