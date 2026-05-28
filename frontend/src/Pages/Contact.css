@@ -10,3 +10,30 @@
   background-size: cover;
   background-position: center;
 }
+
+.contact h1 {
+  font-size: 36px;
+  margin-bottom: 20px;
+  color: #fff;
+}
+.contact p {
+  font-size: 18px;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-bottom: 30px;
+  color: #ddd;
+}
+.contact form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 400px;
+  width: 100%;
+}
+.contact form input,
+.contact form textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}

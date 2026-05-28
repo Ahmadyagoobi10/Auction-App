@@ -12,9 +12,9 @@ export default function Home() {
       <div className="overlay"></div>
 
       <div className="content">
-        <h2>Köp och sälj exklusiva bilar online.</h2>
-        <h2>Buda live på lyxbilar i realtid.</h2>
-        <h2>En modern marknadsplats för premiumbilar.</h2>
+       <h2>Välkommen till framtidens auktion för exklusiva bilar.</h2>
+       <h2>Buda live och tävla om Sveriges mest eftertraktade fordon.</h2>
+       <h2>Lyx, prestanda och passion - samlat på ett ställe.</h2>
       </div>
 
     </div>

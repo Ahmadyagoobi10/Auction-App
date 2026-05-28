@@ -35,15 +35,16 @@
 }
 
 .title {
-  color: white;
+  color: rgb(0, 0, 0);
   margin-bottom: 20px;
 }
 
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 360px));
   gap: 20px;
+  align-items: start;
 }
 
 
