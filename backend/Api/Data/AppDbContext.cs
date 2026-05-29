@@ -23,19 +23,19 @@ namespace Api.Data
                 .HasMany(a => a.Bids)
                 .WithOne(b => b.Auction)
                 .HasForeignKey(b => b.AuctionId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<User>()
-                .HasMany<Bid>()
-                .WithOne(b => b.User)
+            modelBuilder.Entity<Bid>()
+                .HasOne(b => b.User)
+                .WithMany(u => u.Bids)
                 .HasForeignKey(b => b.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Auction>()
                 .Property(a => a.Images)
                 .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
+                    v => JsonSerializer.Serialize(v, new JsonSerializerOptions()),
+                    v => JsonSerializer.Deserialize<List<string>>(v, new JsonSerializerOptions())
                          ?? new List<string>()
                 );
         }

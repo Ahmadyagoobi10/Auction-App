@@ -45,7 +45,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<JwtService>();
 
-
 builder.Services.AddSignalR();
 
 var key = builder.Configuration["Jwt:Key"];
@@ -74,9 +73,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -85,15 +85,12 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-
-
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 
 app.MapHub<Api.Hubs.AuctionHub>("/auctionHub");
 

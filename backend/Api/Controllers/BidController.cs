@@ -85,7 +85,7 @@ public async Task<IActionResult> CreateBid(CreateBidDto dto)
         return BadRequest(new { message = "Auction has ended" });
 
     if (dto.Amount <= auction.Price)
-        return BadRequest(new { message = "Bid must be higher than current price" });
+        return BadRequest(new { message = "Bud måste vara högre än aktuell pris" });
 
     var bid = new Bid
     {
