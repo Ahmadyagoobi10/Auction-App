@@ -7,8 +7,17 @@ export default function BidForm({
   title,
   description,
   price,
-  images
+  images,
+  createdByUserId
 }: any) {
+
+  const token = localStorage.getItem("token");
+
+  const userId = token
+    ? Number(JSON.parse(atob(token.split(".")[1]))[
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+      ])
+    : null;
 
   const [index, setIndex] = useState(0);
   const [bid, setBid] = useState("");
@@ -25,45 +34,48 @@ export default function BidForm({
     : ["https://via.placeholder.com/600"];
 
   const sendBid = async () => {
-    const amount = Number(bid);
 
-    if (!amount || amount <= currentPrice) {
-      setError("Ditt bud måste vara högre än nuvarande pris");
+    try {
+
+      await placeBid(id, Number(bid));
+
+      setError("");
+      setCurrentPrice(Number(bid));
+      setBid("");
+
+      setSuccess("Ditt bud har skickats!");
+
+      if (successTimeout.current) clearTimeout(successTimeout.current);
+      successTimeout.current = setTimeout(() => setSuccess(""), 4000);
+
+    } catch (err: any) {
+
       setSuccess("");
+      setError(err?.message || "Du kan inte lägga bud");
 
-      if (errorTimeout.current) {
-        clearTimeout(errorTimeout.current);
+      if (errorTimeout.current) clearTimeout(errorTimeout.current);
+      errorTimeout.current = setTimeout(() => setError(""), 4000);
+    }
+  };
+
+  const deleteAuction = async () => {
+
+    const token = localStorage.getItem("token");
+
+    await fetch(`http://localhost:5039/api/Auction/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
       }
+    });
 
-      errorTimeout.current = setTimeout(() => {
-        setError("");
-      }, 5000);
-
-      return;
-    }
-
-    setError("");
-
-    await placeBid(id, amount);
-
-    setCurrentPrice(amount);
-    setBid("");
-    setSuccess("Ditt bud har skickats!");
-
-    if (successTimeout.current) {
-      clearTimeout(successTimeout.current);
-    }
-
-    successTimeout.current = setTimeout(() => {
-      setSuccess("");
-    }, 5000);
+    window.location.reload();
   };
 
   return (
     <div className="card">
 
       <div className="image">
-
         <button
           className="arrow left"
           onClick={() =>
@@ -83,7 +95,6 @@ export default function BidForm({
         >
           ›
         </button>
-
       </div>
 
       <div className="content-bid">
@@ -97,22 +108,31 @@ export default function BidForm({
         </div>
 
         <div className="bidRow">
+
           <input
             placeholder="Skriv ditt bud..."
             value={bid}
             onChange={(e) => setBid(e.target.value)}
           />
 
-          <button onClick={sendBid}>
-            Lägg bud
-          </button>
+          {Number(userId) !== Number(createdByUserId) && (
+            <button onClick={sendBid}>
+              Lägg bud
+            </button>
+          )}
+
+          {Number(userId) === Number(createdByUserId) && (
+            <button className="delete-btn" onClick={deleteAuction}>
+              Ta bort
+            </button>
+          )}
+
         </div>
 
         {error && <p className="error-message">{error}</p>}
         {success && <p className="success-message">{success}</p>}
 
       </div>
-
     </div>
   );
 }

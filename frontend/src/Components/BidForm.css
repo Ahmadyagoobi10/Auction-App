@@ -7,7 +7,6 @@
   font-family: Arial, sans-serif;
   color: #111;
 
-  
   min-height: 520px;
   display: flex;
   flex-direction: column;
@@ -77,9 +76,6 @@
 .bidRow {
   display: flex;
   gap: 8px;
-
-
-  min-height: 45px;
 }
 
 .bidRow input {
@@ -113,20 +109,30 @@
 .success-message {
   font-size: 12px;
   margin-top: 6px;
-
   color: #e11d48 !important;
   background: rgba(225, 29, 72, 0.12);
-
   padding: 8px 10px;
   border-radius: 8px;
-
   display: block;
-
-  
-  min-height: 30px;
 }
 
 .success-message {
   color: #16a34a !important;
   background: rgba(22, 163, 74, 0.12);
+}
+
+
+.delete-btn {
+  background: #e11d48;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.delete-btn:hover {
+  background: #be123c;
 }

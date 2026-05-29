@@ -62,75 +62,108 @@ public class BidController : ControllerBase
         return Ok(bid);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateBid(CreateBidDto dto)
+     [HttpPost]
+public async Task<IActionResult> CreateBid(CreateBidDto dto)
+{
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(userIdClaim))
+        return Unauthorized(new { message = "User not authenticated" });
+
+    int userId = int.Parse(userIdClaim);
+
+    var auction = await _context.Auctions
+        .FirstOrDefaultAsync(a => a.Id == dto.AuctionId);
+
+    if (auction == null)
+        return BadRequest(new { message = "Auction not found" });
+
+    if (auction.UserId == userId)
+        return BadRequest(new { message = "You cannot bid on your own auction" });
+
+    if (auction.EndDate <= DateTime.UtcNow)
+        return BadRequest(new { message = "Auction has ended" });
+
+    if (dto.Amount <= auction.Price)
+        return BadRequest(new { message = "Bid must be higher than current price" });
+
+    var bid = new Bid
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Amount = dto.Amount,
+        CreatedAt = DateTime.UtcNow,
+        AuctionId = dto.AuctionId,
+        UserId = userId
+    };
 
-        if (string.IsNullOrEmpty(userIdClaim))
-            return Unauthorized(new { message = "User not authenticated" });
+    _context.Bids.Add(bid);
 
-        int userId = int.Parse(userIdClaim);
+    auction.Price = dto.Amount;
 
-        var auction = await _context.Auctions
-            .FirstOrDefaultAsync(a => a.Id == dto.AuctionId);
+    await _context.SaveChangesAsync();
 
-        if (auction == null)
-            return BadRequest(new { message = "Auction not found" });
-
-        if (auction.EndDate <= DateTime.UtcNow)
-            return BadRequest(new { message = "Auction has ended" });
-
-        if (dto.Amount <= auction.Price)
-            return BadRequest(new { message = "Bid must be higher than current price" });
-
-        var bid = new Bid
+    return Ok(new
+    {
+        message = "Bid placed successfully",
+        bid = new BidDto
         {
-            Amount = dto.Amount,
-            CreatedAt = DateTime.UtcNow,
-            AuctionId = dto.AuctionId,
-            UserId = userId
-        };
-
-        _context.Bids.Add(bid);
-
-        auction.Price = dto.Amount;
-
-        await _context.SaveChangesAsync();
-
-        
-        await _hub.Clients.All.SendAsync("BidUpdated", new
-        {
-            auctionId = dto.AuctionId,
-            amount = dto.Amount,
-            userId = userId
-        });
-
-        return Ok(new
-        {
-            message = "Bid placed successfully",
-            bid = new BidDto
-            {
-                Id = bid.Id,
-                Amount = bid.Amount,
-                CreatedAt = bid.CreatedAt,
-                AuctionId = bid.AuctionId,
-                UserId = bid.UserId
-            }
-        });
-    }
+            Id = bid.Id,
+            Amount = bid.Amount,
+            CreatedAt = bid.CreatedAt,
+            AuctionId = bid.AuctionId,
+            UserId = bid.UserId
+        }
+    });
+ }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBid(int id)
     {
-        var bid = await _context.Bids.FindAsync(id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+            return Unauthorized();
+
+        int userId = int.Parse(userIdClaim);
+
+        var bid = await _context.Bids
+            .Include(b => b.Auction)
+            .FirstOrDefaultAsync(b => b.Id == id);
 
         if (bid == null)
             return NotFound(new { message = "Bid not found" });
 
+        
+        if (bid.Auction== null)
+            return BadRequest(new { message = "Auction missing" });
+
+        
+        var latestBid = await _context.Bids
+            .Where(b => b.AuctionId == bid.AuctionId)
+            .OrderByDescending(b => b.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestBid == null || latestBid.Id != id)
+            return BadRequest(new { message = "Only latest bid can be deleted" });
+
+       
+        if (bid.UserId != userId)
+            return Forbid();
+
         _context.Bids.Remove(bid);
+
+        
+        var previousBid = await _context.Bids
+            .Where(b => b.AuctionId == bid.AuctionId)
+            .OrderByDescending(b => b.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (previousBid != null)
+            bid.Auction.Price = previousBid.Amount;
+        else
+            bid.Auction.Price = 0;
+
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Bid deleted" });
+        return Ok(new { message = "Bid deleted successfully" });
     }
 }

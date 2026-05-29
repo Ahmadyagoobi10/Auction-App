@@ -1,5 +1,17 @@
 const BASE_URL = "http://localhost:5039";
 
+const getToken = () => localStorage.getItem("token");
+
+const authHeader = (): HeadersInit => {
+  const token = getToken();
+
+  if (!token) return {};
+
+  return {
+    Authorization: `Bearer ${token}`
+  };
+};
+
 export const login = async (email: string, password: string) => {
   const res = await fetch(`${BASE_URL}/api/Auth/login`, {
     method: "POST",
@@ -10,7 +22,6 @@ export const login = async (email: string, password: string) => {
   });
 
   if (!res.ok) {
-    
     throw new Error("Fel e-post eller lösenord");
   }
 
@@ -42,11 +53,9 @@ export const register = async (
 };
 
 export const getAuctions = async () => {
-  const token = localStorage.getItem("token");
-
   const res = await fetch(`${BASE_URL}/api/Auction`, {
     headers: {
-      Authorization: `Bearer ${token}`
+      ...authHeader()
     }
   });
 
@@ -58,13 +67,11 @@ export const getAuctions = async () => {
 };
 
 export const placeBid = async (auctionId: number, amount: number) => {
-  const token = localStorage.getItem("token");
-
   const res = await fetch(`${BASE_URL}/api/Bid`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
+      ...authHeader()
     },
     body: JSON.stringify({
       auctionId,
@@ -73,8 +80,14 @@ export const placeBid = async (auctionId: number, amount: number) => {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Kunde inte lägga bud");
+    let message = "Kunde inte lägga bud";
+
+    try {
+      const text = await res.text();
+      message = text || message;
+    } catch {}
+
+    throw new Error(message);
   }
 
   return res.json();

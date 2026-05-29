@@ -19,16 +19,14 @@ public class JwtService
     {
         var jwtKey = _config["Jwt:Key"];
 
-        if (string.IsNullOrEmpty(jwtKey))
-        {
+        if (string.IsNullOrWhiteSpace(jwtKey))
             throw new Exception("Jwt Key missing in appsettings.json");
-        }
 
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Name, user.Username ?? string.Empty),
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
         };
 
         var key = new SymmetricSecurityKey(
