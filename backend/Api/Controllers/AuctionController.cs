@@ -36,34 +36,103 @@ public class AuctionController : ControllerBase
             StartDate = a.StartDate,
             EndDate = a.EndDate,
             UserId = a.UserId,
-            Images = a.Images ?? new List<string>()   
+            Images = a.Images ?? new List<string>()
         }));
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAuction(CreateAuctionDto dto)
+public async Task<IActionResult> CreateAuction(CreateAuctionDto dto)
+{
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (userIdClaim == null)
+        return Unauthorized();
+
+    var userId = int.Parse(userIdClaim);
+
+    var auction = new Auction
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Title = dto.Title,
+        Description = dto.Description,
+        Price = dto.Price,
+        StartDate = dto.StartDate,
+        EndDate = dto.EndDate,
+        UserId = userId,
+        Images = dto.Images ?? new List<string>()
+    };
 
-        if (userIdClaim == null)
-            return Unauthorized();
+    _context.Auctions.Add(auction);
+    await _context.SaveChangesAsync();
 
-        var userId = int.Parse(userIdClaim);
+    return Ok(new AuctionDto
+    {
+        Id = auction.Id,
+        Title = auction.Title,
+        Description = auction.Description,
+        Price = auction.Price,
+        StartDate = auction.StartDate,
+        EndDate = auction.EndDate,
+        UserId = auction.UserId,
+        Images = auction.Images ?? new List<string>()
+    });
+}
 
-        var auction = new Auction
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateAuction(int id, CreateAuctionDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+
+        var auction = await _context.Auctions
+            .Include(a => a.Bids)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (auction == null)
+            return NotFound();
+
+        if (auction.UserId != userId)
+            return Forbid();
+
+        
+        if (auction.Bids != null && auction.Bids.Any())
         {
-            Title = dto.Title,
-            Description = dto.Description,
-            Price = dto.Price,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            UserId = userId,
-            Images = dto.Images ?? new List<string>()  
-        };
+            auction.Title = dto.Title;
+            auction.Description = dto.Description;
+            auction.StartDate = dto.StartDate;
+            auction.EndDate = dto.EndDate;
+            auction.Images = dto.Images ?? auction.Images;
+        }
+        else
+        {
+            auction.Title = dto.Title;
+            auction.Description = dto.Description;
+            auction.Price = dto.Price;
+            auction.StartDate = dto.StartDate;
+            auction.EndDate = dto.EndDate;
+            auction.Images = dto.Images ?? auction.Images;
+        }
 
-        _context.Auctions.Add(auction);
         await _context.SaveChangesAsync();
 
         return Ok(auction);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteAuction(int id)
+    {
+        var auction = await _context.Auctions.FindAsync(id);
+
+        if (auction == null)
+            return NotFound();
+
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+
+        if (auction.UserId != userId)
+            return Forbid();
+
+        _context.Auctions.Remove(auction);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }

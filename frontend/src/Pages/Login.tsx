@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login, register } from "../api/api";
+import { setToken } from "../Utils/Auth";
 import "./Login.css";
 
 export default function Login() {
@@ -15,14 +16,11 @@ export default function Login() {
   const handleSubmit = async () => {
 
     if (isRegister) {
-
       if (!username || !email || !password) {
         setMessage(" Fyll i alla fält");
         return;
       }
-
     } else {
-
       if (!email || !password) {
         setMessage(" Fyll i alla fält");
         return;
@@ -43,7 +41,7 @@ export default function Login() {
 
         const data = await login(email, password);
 
-        localStorage.setItem("token", data.token);
+        setToken(data.token);
 
         window.location.href = "/";
       }
@@ -51,7 +49,6 @@ export default function Login() {
     } catch (err: any) {
 
       setMessage(" " + err.message);
-
     }
   };
 

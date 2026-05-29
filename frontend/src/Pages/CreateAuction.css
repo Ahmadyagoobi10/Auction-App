@@ -1,13 +1,56 @@
-div {
-  text-align: center;
+.create-page {
+  position: relative;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  font-family: Arial, sans-serif;
 }
 
-input {
-  display: block;
-  margin: 10px auto;
-  padding: 8px;
+.create-bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
 }
 
-button {
-  padding: 8px 15px;
+.create-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: -1;
+}
+
+.create-form {
+  background: rgba(0,0,0,0.5);
+  padding: 20px;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  width: 300px;
+}
+
+.create-input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+.create-btn {
+  padding: 10px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
