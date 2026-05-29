@@ -34,40 +34,38 @@ export default function BidForm({
     : ["https://via.placeholder.com/600"];
 
   const sendBid = async () => {
+    await placeBid(id, Number(bid));
 
-    try {
+    setError("");
+    setCurrentPrice(Number(bid));
+    setBid("");
 
-      await placeBid(id, Number(bid));
+    setSuccess("Ditt bud har skickats!");
 
-      setError("");
-      setCurrentPrice(Number(bid));
-      setBid("");
-
-      setSuccess("Ditt bud har skickats!");
-
-      if (successTimeout.current) clearTimeout(successTimeout.current);
-      successTimeout.current = setTimeout(() => setSuccess(""), 4000);
-
-    } catch (err: any) {
-
-      setSuccess("");
-      setError(err?.message || "Du kan inte lägga bud");
-
-      if (errorTimeout.current) clearTimeout(errorTimeout.current);
-      errorTimeout.current = setTimeout(() => setError(""), 4000);
-    }
+    if (successTimeout.current) clearTimeout(successTimeout.current);
+    successTimeout.current = setTimeout(() => setSuccess(""), 4000);
   };
 
   const deleteAuction = async () => {
 
     const token = localStorage.getItem("token");
 
-    await fetch(`http://localhost:5039/api/Auction/${id}`, {
+    const res = await fetch(`http://localhost:5039/api/Auction/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+
+    if (!res.ok) {
+      const msg = await res.text();
+      setError(msg || "Kunde inte ta bort auktionen");
+
+      if (errorTimeout.current) clearTimeout(errorTimeout.current);
+      errorTimeout.current = setTimeout(() => setError(""), 4000);
+
+      return;
+    }
 
     window.location.reload();
   };
@@ -76,25 +74,11 @@ export default function BidForm({
     <div className="card">
 
       <div className="image">
-        <button
-          className="arrow left"
-          onClick={() =>
-            setIndex((i) => (i === 0 ? list.length - 1 : i - 1))
-          }
-        >
-          ‹
-        </button>
+        <button className="arrow left" onClick={() => setIndex(i => (i === 0 ? list.length - 1 : i - 1))}>‹</button>
 
         <img src={list[index]} alt={title} />
 
-        <button
-          className="arrow right"
-          onClick={() =>
-            setIndex((i) => (i + 1) % list.length)
-          }
-        >
-          ›
-        </button>
+        <button className="arrow right" onClick={() => setIndex(i => (i + 1) % list.length)}>›</button>
       </div>
 
       <div className="content-bid">
